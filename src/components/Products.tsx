@@ -27,22 +27,35 @@ const Products = () => {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ["products"],
     queryFn: fetchAllProducts,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     select: (data) => {
       if (!data) return [];
       
-      // Get unique categories
-      const categories = [...new Set(data.map(p => p.category_product))];
+      // Get unique categories and sort them to ensure consistent order
+      const categories = [...new Set(data.map(p => p.category_product))].sort();
       
-      // Select 2 random products from each category
+      // Use the current date as a seed for randomization
+      const today = new Date().toDateString();
+      const seededRandom = (seed: string) => {
+        const x = Math.sin(Array.from(seed).reduce((a, b) => {
+          return a + b.charCodeAt(0);
+        }, 0)) * 10000;
+        return x - Math.floor(x);
+      };
+      
+      // Select 2 products from each category using seeded random
       const randomProducts = categories.flatMap(category => {
         const categoryProducts = data.filter(p => p.category_product === category);
-        return categoryProducts
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 2);
+        const shuffled = [...categoryProducts].sort(() => 
+          seededRandom(`${today}-${category}`) - 0.5
+        );
+        return shuffled.slice(0, 2);
       });
       
-      // Shuffle the final selection for more randomness
-      return randomProducts.sort(() => Math.random() - 0.5);
+      // Final shuffle with same seed
+      return randomProducts.sort(() => 
+        seededRandom(today) - 0.5
+      );
     }
   });
 
