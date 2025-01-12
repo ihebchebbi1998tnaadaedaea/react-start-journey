@@ -27,6 +27,23 @@ const Products = () => {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ["products"],
     queryFn: fetchAllProducts,
+    select: (data) => {
+      // Get unique categories
+      const categories = [...new Set(data.map(product => product.category_product))];
+      
+      // Create an array to store selected products
+      let selectedProducts = [];
+      
+      // Select 2 random products from each category
+      categories.forEach(category => {
+        const categoryProducts = data.filter(product => product.category_product === category);
+        const shuffled = [...categoryProducts].sort(() => Math.random() - 0.5);
+        selectedProducts.push(...shuffled.slice(0, 2));
+      });
+      
+      // Shuffle the final selection
+      return selectedProducts.sort(() => Math.random() - 0.5);
+    }
   });
 
   // Navigation handlers
@@ -82,9 +99,7 @@ const Products = () => {
           onClick={scrollPrev}
           disabled={!prevEnabled}
         >
-          <div>
-         {'<'}
-         </div>
+          <div>{'<'}</div>
         </button>
         <button
           className={`embla__button embla__button--next ${
@@ -93,9 +108,7 @@ const Products = () => {
           onClick={scrollNext}
           disabled={!nextEnabled}
         >
-          <div>
-           {'>'}
-           </div>
+          <div>{'>'}</div>
         </button>
       </div>
       <style>
